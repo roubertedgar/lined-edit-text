@@ -7,11 +7,11 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.text.TextPaint
 import android.util.AttributeSet
-import android.widget.TextView
+import androidx.appcompat.widget.AppCompatTextView
 import kotlin.math.roundToInt
 
 
-class LinedEditText(context: Context, attributes: AttributeSet) : TextView(context, attributes) {
+class LinedEditText(context: Context, attributes: AttributeSet) : AppCompatTextView(context, attributes) {
 
     private val linePath = Path()
     private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -65,7 +65,7 @@ class LinedEditText(context: Context, attributes: AttributeSet) : TextView(conte
     private fun drawPath(canvas: Canvas) {
         var pathX = getPathLineX().toFloat()
         val pathY = getPathLineY().toFloat()
-        val drawableWidth = getDrawableWidht()
+        val drawableWidth = getDrawableWidth()
 
         val lineSpacing = 20
         val lineSize = measureLineSize(drawableWidth, lineSpacing)
@@ -95,6 +95,6 @@ class LinedEditText(context: Context, attributes: AttributeSet) : TextView(conte
 
     private fun getPathLineY(): Int = height - paddingBottom - 20
 
-    private fun getDrawableWidht(): Int = width - paddingStart - paddingEnd
+    private fun getDrawableWidth(): Int = width - paddingStart - paddingEnd
 
 }

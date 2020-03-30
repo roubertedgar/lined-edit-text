@@ -1,6 +1,5 @@
 package com.downstairs.linededittext
 
-import android.content.Context
 import android.view.View
 
 fun measureDimension(desiredSize: Int, measureSpec: Int): Int {
