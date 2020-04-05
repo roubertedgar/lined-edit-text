@@ -22,9 +22,9 @@ private enum class FanSpeed(val label: Int) {
     }
 }
 
-private const val RADIUS_OFFSET_LABEL = 30
+private const val RADIUS_OFFSET_LABEL = 35
 private const val RADIUS_OFFSET_INDICATOR = -35
-private const val RADIAN_160_DEGREES = 3.53429173529
+private const val RADIAN_160_DEGREES = 3.534291
 private const val RADIAN_45_DEGREES = 0.785398
 
 class DialView @JvmOverloads constructor(
