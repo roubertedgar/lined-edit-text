@@ -4,8 +4,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Path
-import android.text.TextPaint
 import android.util.AttributeSet
 import androidx.appcompat.widget.AppCompatTextView
 import kotlin.math.roundToInt
@@ -23,8 +21,7 @@ class LinedEditText @JvmOverloads constructor(
         const val TEXT_LENGTH = 6
     }
 
-    //Line
-    private val lines = FloatArray(TEXT_LENGTH * 4)
+    private val lines = mutableListOf<Line>()
     private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     init {
@@ -52,28 +49,31 @@ class LinedEditText @JvmOverloads constructor(
     private fun createBottomLines(width: Int, height: Int) {
         val availableWidth = width - paddingStart - paddingEnd
         val availableLineSize = availableWidth / TEXT_LENGTH
-        val remainWidth = availableWidth % TEXT_LENGTH
-        val minLineSpace = remainWidth.toFloat() / (TEXT_LENGTH - 1).toFloat()
 
-        val lineSpacing = 20 + minLineSpace / 6
-        val lineSize = availableLineSize - lineSpacing
+        val lineSpacing = 20
+        val lineSize = (availableLineSize - lineSpacing).toFloat()
 
         val yPoint = (height - paddingBottom).toFloat() - dpToPixel(2f)
-        var xPoint = INITIAL_X + paddingStart + lineSpacing / 2
+        var xPoint = INITIAL_X + paddingStart + lineSpacing / 2f
 
-        for (i in lines.indices step 4) {
-            lines[i] = xPoint
-            lines[i + 1] = yPoint
-            lines[i + 2] = xPoint + lineSize
-            lines[i + 3] = yPoint
+        for (i in 0 until TEXT_LENGTH) {
+            val stopX = xPoint + lineSize
 
+            lines.add(Line(xPoint, yPoint, stopX))
             xPoint += lineSize + lineSpacing
         }
     }
 
-    override fun onDraw(canvas: Canvas?) {
-        canvas?.run {
-            drawLines(lines, linePaint)
+    override fun onDraw(canvas: Canvas) {
+
+        lines.forEach {
+            canvas.drawLine(it.startX, it.startY, it.stopX, it.stopY, linePaint)
         }
     }
+}
+
+class Line(val startX: Float, val startY: Float, val stopX: Float, val stopY: Float = startY) {
+
+    val center: Float
+        get() = (stopX - startX) / 2
 }
