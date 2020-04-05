@@ -14,7 +14,7 @@ private enum class FanSpeed(val label: Int) {
     MEDIUM(R.string.fan_medium),
     HIGH(R.string.fan_high);
 
-    fun next() = when(this){
+    fun next() = when (this) {
         OFF -> LOW
         LOW -> MEDIUM
         MEDIUM -> HIGH
@@ -46,7 +46,7 @@ class DialView @JvmOverloads constructor(
         typeface = Typeface.create("", Typeface.BOLD)
     }
 
-    init{
+    init {
         isClickable = true
         isFocusable = true
     }
@@ -69,21 +69,27 @@ class DialView @JvmOverloads constructor(
         canvas.drawCircle(centerX, centerY, radius, paint)
 
         val markerRadius = radius + RADIUS_OFFSET_INDICATOR
-        pointPosition.computeXYForSpeed(fanSpeed, markerRadius)
+        pointPosition.computeXYForSpeed(fanSpeed.ordinal, markerRadius)
         paint.color = Color.BLACK
         canvas.drawCircle(pointPosition.x, pointPosition.y, radius / 12, paint)
 
+        drawFunSpeedLabels(canvas)
+    }
+
+    private fun drawFunSpeedLabels(canvas: Canvas) {
         val labelRadius = radius + RADIUS_OFFSET_LABEL
-        for (i in FanSpeed.values()) {
-            pointPosition.computeXYForSpeed(i, labelRadius)
-            val label = resources.getString(i.label)
+
+        FanSpeed.values().forEach {
+            pointPosition.computeXYForSpeed(it.ordinal, labelRadius)
+
+            val label = resources.getString(it.label)
             canvas.drawText(label, pointPosition.x, pointPosition.y, paint)
         }
     }
 
-    private fun PointF.computeXYForSpeed(pos: FanSpeed, radius: Float) {
+    private fun PointF.computeXYForSpeed(position: Int, radius: Float) {
         val startAngle = RADIAN_160_DEGREES
-        val angle = startAngle + pos.ordinal * RADIAN_45_DEGREES
+        val angle = startAngle + position * RADIAN_45_DEGREES
         x = (radius * cos(angle)).toFloat() + width / 2
         y = (radius * sin(angle)).toFloat() + height / 2
     }
