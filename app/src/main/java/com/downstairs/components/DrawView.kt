@@ -21,6 +21,9 @@ class DrawView(context: Context) : View(context) {
     private lateinit var extraCanvas: Canvas
     private lateinit var extraBitMap: Bitmap
 
+    private val drawing = Path()
+    private val currentPath = Path()
+
     val backgroundColor = ResourcesCompat.getColor(resources, R.color.colorBackground, null)
     val drawColor = ResourcesCompat.getColor(resources, R.color.colorPaint, null)
 
@@ -33,8 +36,6 @@ class DrawView(context: Context) : View(context) {
         strokeCap = Paint.Cap.ROUND
         strokeWidth = STROKE_WIDTH
     }
-
-    val path = Path()
 
     override fun onSizeChanged(width: Int, height: Int, oldWidth: Int, oldHeight: Int) {
         super.onSizeChanged(width, height, oldWidth, oldHeight)
@@ -62,8 +63,8 @@ class DrawView(context: Context) : View(context) {
     }
 
     private fun touchStart() {
-        path.reset()
-        path.moveTo(motionTouchEventX, motionTouchEventY)
+        currentPath.reset()
+        currentPath.moveTo(motionTouchEventX, motionTouchEventY)
 
         currentX = motionTouchEventX
         currentY = motionTouchEventY
@@ -75,7 +76,7 @@ class DrawView(context: Context) : View(context) {
 
         if (dx >= touchTolerance || dy >= touchTolerance) {
 
-            path.quadTo(
+            currentPath.quadTo(
                 currentX,
                 currentY,
                 (motionTouchEventX + currentX) / 2,
@@ -84,20 +85,24 @@ class DrawView(context: Context) : View(context) {
             currentX = motionTouchEventX
             currentY = motionTouchEventY
 
-            extraCanvas.drawPath(path, paint)
+            extraCanvas.drawPath(currentPath, paint)
         }
 
         invalidate()
     }
 
     private fun touchUp() {
-        path.reset()
+        drawing.addPath(currentPath)
+        currentPath.reset()
     }
-
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+
         canvas.drawBitmap(extraBitMap, 0f, 0f, null)
+        canvas.drawPath(drawing, paint)
+        canvas.drawPath(currentPath, paint)
         canvas.drawRect(frame, paint)
+
     }
 }
