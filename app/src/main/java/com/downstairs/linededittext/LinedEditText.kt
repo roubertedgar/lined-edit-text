@@ -53,7 +53,7 @@ class LinedEditText @JvmOverloads constructor(
         val lineSpacing = 20
         val lineSize = (availableLineSize - lineSpacing).toFloat()
 
-        val yPoint = (height - paddingBottom).toFloat() - dpToPixel(2f)
+        val yPoint = (height - paddingBottom).toFloat() - dpToPixel(3f)
         var xPoint = INITIAL_X + paddingStart + lineSpacing / 2f
 
         for (i in 0 until TEXT_LENGTH) {
