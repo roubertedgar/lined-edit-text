@@ -6,6 +6,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import androidx.core.content.res.ResourcesCompat
+import kotlin.math.abs
 
 private const val STROKE_WIDTH = 12f
 
@@ -24,8 +25,8 @@ class DrawView(context: Context) : View(context) {
     private val drawing = Path()
     private val currentPath = Path()
 
-    val backgroundColor = ResourcesCompat.getColor(resources, R.color.colorBackground, null)
-    val drawColor = ResourcesCompat.getColor(resources, R.color.colorPaint, null)
+    private val backgroundColor = ResourcesCompat.getColor(resources, R.color.colorBackground, null)
+    private val drawColor = ResourcesCompat.getColor(resources, R.color.colorPaint, null)
 
     private val paint = Paint().apply {
         color = drawColor
@@ -71,8 +72,8 @@ class DrawView(context: Context) : View(context) {
     }
 
     private fun touchMove() {
-        val dx = Math.abs(motionTouchEventX - currentX)
-        val dy = Math.abs(motionTouchEventY - currentY)
+        val dx = abs(motionTouchEventX - currentX)
+        val dy = abs(motionTouchEventY - currentY)
 
         if (dx >= touchTolerance || dy >= touchTolerance) {
 
