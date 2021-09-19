@@ -4,4 +4,7 @@
     <dimen name="default_margin">8dp</dimen>
     <dimen name="margin_top">24dp</dimen>
     <dimen name="fun_dimen">250dp</dimen>
+
+    <dimen name="default_progress_size">50dp</dimen>
+    <dimen name="default_progress_stroke">2dp</dimen>
 </resources>

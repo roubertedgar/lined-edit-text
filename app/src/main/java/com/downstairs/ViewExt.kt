@@ -1,4 +1,4 @@
-package com.downstairs.linededittext
+package com.downstairs
 
 import android.view.View
 

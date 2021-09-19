@@ -6,6 +6,8 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.util.AttributeSet
 import androidx.appcompat.widget.AppCompatTextView
+import com.downstairs.dpToPixel
+import com.downstairs.measureDimension
 import kotlin.math.roundToInt
 
 
