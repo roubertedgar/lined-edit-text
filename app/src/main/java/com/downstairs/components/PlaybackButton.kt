@@ -22,7 +22,7 @@ class PlaybackButton @JvmOverloads constructor(
     private var progressBox = RectF(0f, 0f, 0f, 0f)
 
     private var startAngle = 270f
-    private var sweepAngle: Float = 270f
+    private var sweepAngle: Float = 0f
         set(value) {
             field = value
             invalidate()
@@ -31,12 +31,13 @@ class PlaybackButton @JvmOverloads constructor(
     @IntRange(from = 0, to = 100) var progress = 0
         set(value) {
             field = value
-            calculateAngle(value)
+            sweepAngle(value)
         }
 
     private var progressPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = stroke
+        strokeCap = Paint.Cap.ROUND
         color = resources.getColor(R.color.colorAccent)
     }
 
@@ -71,12 +72,12 @@ class PlaybackButton @JvmOverloads constructor(
         canvas.drawArc(progressBox, startAngle, sweepAngle, false, progressPaint)
     }
 
-    private fun calculateAngle(progress: Int) {
+    private fun sweepAngle(progress: Int) {
         sweepAngle = if (progress > 0) (360f * progress / 100) else 0f
     }
 
     fun animateProgress(duration: Long) {
-        animateFloatRange(from = 0f, to = 360f, durationMs = duration) { sweepAngle = it }
+        animateFloatRange(to = 180f, durationMs = duration) { sweepAngle = it }
     }
 }
 
