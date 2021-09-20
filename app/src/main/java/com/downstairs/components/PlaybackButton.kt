@@ -1,11 +1,15 @@
 package com.downstairs.components
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
+import android.view.animation.LinearInterpolator
+import androidx.annotation.IntRange
+import com.downstairs.measureDimension
 
 class PlaybackButton @JvmOverloads constructor(
     context: Context,
@@ -17,6 +21,18 @@ class PlaybackButton @JvmOverloads constructor(
 
     private var progressBox = RectF(0f, 0f, 0f, 0f)
 
+    private var startAngle = 270f
+    private var sweepAngle: Float = 270f
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    @IntRange(from = 0, to = 100) var progress = 0
+        set(value) {
+            field = value
+            calculateAngle(value)
+        }
 
     private var progressPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -24,14 +40,10 @@ class PlaybackButton @JvmOverloads constructor(
         color = resources.getColor(R.color.colorAccent)
     }
 
-    private var progress = 50
-        set(value) {
-            field = if (value > 0) (360 * value / 100) else 0
-            invalidate()
-        }
-
     init {
-        if (isInEditMode) progress = 100
+        if (isInEditMode) progress = 75
+        isClickable = true
+        isFocusable = true
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -44,8 +56,7 @@ class PlaybackButton @JvmOverloads constructor(
     }
 
     override fun onSizeChanged(width: Int, height: Int, oldWidth: Int, oldHeight: Int) {
-        // stroke = line of 1dp + halfTop + halfBottom
-        val halfStrokeTop = stroke / 2 + dpToPixel(1f)
+        val halfStrokeTop = stroke / 2
         val halfStrokeBottom = stroke / 2
 
         val left = halfStrokeTop + paddingLeft
@@ -57,39 +68,32 @@ class PlaybackButton @JvmOverloads constructor(
 
     override fun draw(canvas: Canvas) {
         super.draw(canvas)
-        canvas.drawArc(progressBox, START_ANGLE, progress.toFloat(), false, progressPaint)
+        canvas.drawArc(progressBox, startAngle, sweepAngle, false, progressPaint)
     }
 
-    companion object {
-        const val START_ANGLE = 270f
+    private fun calculateAngle(progress: Int) {
+        sweepAngle = if (progress > 0) (360f * progress / 100) else 0f
+    }
+
+    fun animateProgress(duration: Long) {
+        animateFloatRange(from = 0f, to = 360f, durationMs = duration) { sweepAngle = it }
     }
 }
 
 
-fun measureDimension(desiredSize: Int, measureSpec: Int): Int {
-
-    val specMode = View.MeasureSpec.getMode(measureSpec)
-    val specSize = View.MeasureSpec.getSize(measureSpec)
-
-    if (specMode == View.MeasureSpec.EXACTLY) {
-        return specSize
-    } else {
-
-        if (specMode == View.MeasureSpec.AT_MOST) {
-            return desiredSize.coerceAtMost(specSize)
+fun animateFloatRange(
+    from: Float = 0f,
+    to: Float = 100f,
+    durationMs: Long = 600,
+    repeat: Int = 0,
+    onUpdate: (Float) -> Unit
+) {
+    ValueAnimator.ofFloat(from, to).apply {
+        duration = durationMs
+        repeatCount = repeat
+        interpolator = LinearInterpolator()
+        addUpdateListener { valueAnimator ->
+            onUpdate(valueAnimator.animatedValue as Float)
         }
-
-        return desiredSize
-    }
-}
-
-
-fun View.pixelToDp(pixel: Float): Float {
-    val scale = this.resources.displayMetrics.density
-    return pixel / scale - 0.5f
-}
-
-fun View.dpToPixel(dp: Float): Float {
-    val scale = this.resources.displayMetrics.density
-    return dp * scale + 0.5f
+    }.start()
 }
