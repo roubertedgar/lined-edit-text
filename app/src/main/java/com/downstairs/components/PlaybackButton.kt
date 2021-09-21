@@ -7,8 +7,12 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
+import android.view.animation.AccelerateInterpolator
+import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import androidx.annotation.IntRange
+import androidx.core.animation.addListener
+import androidx.core.animation.doOnRepeat
 import com.downstairs.measureDimension
 
 class PlaybackButton @JvmOverloads constructor(
@@ -21,12 +25,8 @@ class PlaybackButton @JvmOverloads constructor(
 
     private var progressBox = RectF(0f, 0f, 0f, 0f)
 
-    private var startAngle = 270f
-    private var sweepAngle: Float = 0f
-        set(value) {
-            field = value
-            invalidate()
-        }
+    private var startAngle = 270
+    private var sweepAngle = 0
 
     @IntRange(from = 0, to = 100) var progress = 0
         set(value) {
@@ -69,32 +69,58 @@ class PlaybackButton @JvmOverloads constructor(
 
     override fun draw(canvas: Canvas) {
         super.draw(canvas)
-        canvas.drawArc(progressBox, startAngle, sweepAngle, false, progressPaint)
+        canvas.drawArc(
+            progressBox,
+            startAngle.toFloat(),
+            sweepAngle.toFloat(),
+            false,
+            progressPaint
+        )
     }
 
     private fun sweepAngle(progress: Int) {
-        sweepAngle = if (progress > 0) (360f * progress / 100) else 0f
+        sweepAngle = if (progress > 0) (360 * progress / 100) else 0
     }
 
     fun animateProgress(duration: Long) {
-        animateFloatRange(to = 180f, durationMs = duration) { sweepAngle = it }
+        startAngle = 0
+        sweepAngle = 0
+
+        animateIntValue(to = 450, durationMs = duration,
+            onUpdate = { angle ->
+                if (angle <= 180) sweepAngle = angle
+                else if (startAngle >= 180) sweepAngle = 360 - startAngle
+
+                if (angle >= 90) {
+                    startAngle = angle - 90
+                } else if (angle == 0) {
+                    startAngle = 0
+                    sweepAngle = 1
+                }
+
+                print(
+                    "ANGLES:\n" +
+                            "Sweep: $sweepAngle\n" +
+                            "Start: $startAngle\n" +
+                            "Animation: $angle\n\n"
+                )
+
+                invalidate()
+            })
     }
 }
 
-
-fun animateFloatRange(
-    from: Float = 0f,
-    to: Float = 100f,
+fun animateIntValue(
+    to: Int = 100,
     durationMs: Long = 600,
-    repeat: Int = 0,
-    onUpdate: (Float) -> Unit
+    onComplete: () -> Unit = {},
+    onUpdate: (Int) -> Unit
 ) {
-    ValueAnimator.ofFloat(from, to).apply {
+    ValueAnimator.ofInt(0, to).apply {
         duration = durationMs
-        repeatCount = repeat
-        interpolator = LinearInterpolator()
-        addUpdateListener { valueAnimator ->
-            onUpdate(valueAnimator.animatedValue as Float)
-        }
+        repeatCount = ValueAnimator.INFINITE
+        interpolator = AccelerateInterpolator()
+        addUpdateListener { valueAnimator -> onUpdate(valueAnimator.animatedValue as Int) }
+        doOnRepeat { onComplete() }
     }.start()
 }
