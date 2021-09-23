@@ -8,11 +8,7 @@ import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
 import android.view.animation.AccelerateInterpolator
-import android.view.animation.Animation
-import android.view.animation.LinearInterpolator
 import androidx.annotation.IntRange
-import androidx.core.animation.addListener
-import androidx.core.animation.doOnRepeat
 import com.downstairs.measureDimension
 
 class PlaybackButton @JvmOverloads constructor(
@@ -25,8 +21,8 @@ class PlaybackButton @JvmOverloads constructor(
 
     private var progressBox = RectF(0f, 0f, 0f, 0f)
 
-    private var startAngle = 270
-    private var sweepAngle = 0
+    private var startAngle = 0.0f
+    private var sweepAngle = 0.0f
 
     @IntRange(from = 0, to = 100) var progress = 0
         set(value) {
@@ -69,43 +65,40 @@ class PlaybackButton @JvmOverloads constructor(
 
     override fun draw(canvas: Canvas) {
         super.draw(canvas)
-        canvas.drawArc(
-            progressBox,
-            startAngle.toFloat(),
-            sweepAngle.toFloat(),
-            false,
-            progressPaint
-        )
+        canvas.save()
+        canvas.rotate(-90f, (width / 2f), height / 2f)
+        canvas.drawArc(progressBox, startAngle, sweepAngle, false, progressPaint)
+        canvas.restore()
     }
 
     private fun sweepAngle(progress: Int) {
-        sweepAngle = if (progress > 0) (360 * progress / 100) else 0
+        sweepAngle = if (progress > 0) (360 * progress / 100.0f) else 0.0f
     }
 
     fun animateProgress(duration: Long) {
-        startAngle = 0
-        sweepAngle = 0
+        var previousAngle = 0
+        animateIntValue(to = 200, durationMs = duration,
+            onUpdate = { animated, fraction ->
+                if (fraction < 0.5) sweepAngle = 360 * fraction
+                else if (fraction >= 0.5) sweepAngle = 360 - (360 * fraction)
 
-        animateIntValue(to = 450, durationMs = duration,
-            onUpdate = { angle ->
-                if (angle <= 180) sweepAngle = angle
-                else if (startAngle >= 180) sweepAngle = 360 - startAngle
 
-                if (angle >= 90) {
-                    startAngle = angle - 90
-                } else if (angle == 0) {
-                    startAngle = 0
-                    sweepAngle = 1
+                if (fraction >= 0.25) {
+                    startAngle = (480 * fraction) - 120
                 }
 
-                print(
-                    "ANGLES:\n" +
-                            "Sweep: $sweepAngle\n" +
-                            "Start: $startAngle\n" +
-                            "Animation: $angle\n\n"
-                )
+                if (previousAngle != animated) {
+                    print(
+                        "ANGLES:\n" +
+                                "Sweep: $sweepAngle\n" +
+                                "Start: $startAngle\n" +
+                                "Fraction: $fraction\n" +
+                                "Animation:$animated\n\n"
+                    )
 
-                invalidate()
+                    previousAngle = animated
+                    invalidate()
+                }
             })
     }
 }
@@ -113,14 +106,15 @@ class PlaybackButton @JvmOverloads constructor(
 fun animateIntValue(
     to: Int = 100,
     durationMs: Long = 600,
-    onComplete: () -> Unit = {},
-    onUpdate: (Int) -> Unit
+    onUpdate: (animated: Int, fraction: Float) -> Unit
 ) {
     ValueAnimator.ofInt(0, to).apply {
         duration = durationMs
         repeatCount = ValueAnimator.INFINITE
         interpolator = AccelerateInterpolator()
-        addUpdateListener { valueAnimator -> onUpdate(valueAnimator.animatedValue as Int) }
-        doOnRepeat { onComplete() }
+        addUpdateListener { valueAnimator ->
+            val animated = valueAnimator.animatedValue as Int
+            onUpdate(animated, valueAnimator.animatedFraction)
+        }
     }.start()
 }
