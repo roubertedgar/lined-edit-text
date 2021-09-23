@@ -9,7 +9,5 @@ class ProgressActivity : AppCompatActivity(R.layout.progress_activity) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        playbackButton.animateProgress(1300)
     }
 }
