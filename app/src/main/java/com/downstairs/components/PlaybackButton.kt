@@ -10,6 +10,7 @@ import android.util.AttributeSet
 import android.view.View
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.Interpolator
+import android.view.animation.LinearInterpolator
 import androidx.annotation.IntRange
 import com.downstairs.measureDimension
 
@@ -27,11 +28,7 @@ class PlaybackButton @JvmOverloads constructor(
     private var centerX = 0.0f
     private var centerY = 0.0f
 
-    @IntRange(from = 0, to = 100) var progress = 0
-        set(value) {
-            field = value
-            sweepAngle(value)
-        }
+    private var progress = 0
 
     private var progressPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -76,17 +73,20 @@ class PlaybackButton @JvmOverloads constructor(
         canvas.restore()
     }
 
-    private fun sweepAngle(progress: Int) {
-        sweepAngle = if (progress > 0) (360 * progress / 100.0f) else 0.0f
-    }
+    fun setProgress(progress: Int, duration: Long = 100) {
+        val angle = progress * 360 / 100
+        val config = AnimationConfig(angle, duration)
 
-    private fun animateProgress() {
-
+        animateIntValue(config) { animated, _ ->
+            sweepAngle = animated.toFloat()
+            postInvalidate()
+        }
     }
 
     private fun animateInfinitely() {
-        val config = AnimationConfig(200, 1200, INFINITE)
-        animateIntValue(config) { fraction ->
+        val config = AnimationConfig(200, 1200, INFINITE, AccelerateInterpolator())
+
+        animateIntValue(config) { _, fraction ->
             if (fraction < 0.5) sweepAngle = 360 * fraction
             else if (fraction >= 0.5) sweepAngle = 360 - (360 * fraction)
 
@@ -100,13 +100,18 @@ class PlaybackButton @JvmOverloads constructor(
 
 fun animateIntValue(
     config: AnimationConfig,
-    onUpdate: (fraction: Float) -> Unit
+    onUpdate: (value: Int, fraction: Float) -> Unit
 ) {
     ValueAnimator.ofInt(0, config.value).apply {
         duration = config.duration
         repeatCount = config.repeat
         interpolator = config.interpolator
-        addUpdateListener { valueAnimator -> onUpdate(valueAnimator.animatedFraction) }
+        addUpdateListener { valueAnimator ->
+            onUpdate(
+                valueAnimator.animatedValue as Int,
+                valueAnimator.animatedFraction
+            )
+        }
     }.start()
 }
 
@@ -114,5 +119,5 @@ data class AnimationConfig(
     val value: Int = 100,
     val duration: Long = 600,
     val repeat: Int = 0,
-    val interpolator: Interpolator = AccelerateInterpolator()
+    val interpolator: Interpolator = LinearInterpolator()
 )
