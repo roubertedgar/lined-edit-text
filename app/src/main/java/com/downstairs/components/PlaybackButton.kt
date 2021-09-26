@@ -11,8 +11,9 @@ import android.view.View
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.Interpolator
 import android.view.animation.LinearInterpolator
-import androidx.annotation.IntRange
+import com.downstairs.dpToPixel
 import com.downstairs.measureDimension
+import kotlin.math.sqrt
 
 class PlaybackButton @JvmOverloads constructor(
     context: Context,
@@ -23,6 +24,7 @@ class PlaybackButton @JvmOverloads constructor(
     private val stroke = context.resources.getDimension(R.dimen.default_progress_stroke)
 
     private var progressBox = RectF(0f, 0f, 0f, 0f)
+    private var playbackBox = RectF(0f, 0f, 0f, 0f)
     private var startAngle = 0.0f
     private var sweepAngle = 0.0f
     private var centerX = 0.0f
@@ -37,8 +39,13 @@ class PlaybackButton @JvmOverloads constructor(
         color = resources.getColor(R.color.colorAccent)
     }
 
+    private var playbackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL_AND_STROKE
+        color = resources.getColor(R.color.colorAccent)
+    }
+
     init {
-        if (isInEditMode) progress = 75
+        if (isInEditMode) sweepAngle = 270f
         isClickable = true
         isFocusable = true
     }
@@ -53,16 +60,10 @@ class PlaybackButton @JvmOverloads constructor(
     }
 
     override fun onSizeChanged(width: Int, height: Int, oldWidth: Int, oldHeight: Int) {
-        val halfStrokeTop = stroke / 2
-        val halfStrokeBottom = stroke / 2
-
-        val left = halfStrokeTop + paddingLeft
-        val right = (width - halfStrokeBottom) - paddingRight
-        val bottom = (height - halfStrokeBottom) - paddingBottom
-        val top = halfStrokeTop + paddingTop
-        progressBox = RectF(left, top, right, bottom)
         centerX = (width / 2f)
         centerY = height / 2f
+        progressBox = createProgressBox(width, height)
+        playbackBox = createPlaybackBox(progressBox)
     }
 
     override fun draw(canvas: Canvas) {
@@ -83,7 +84,7 @@ class PlaybackButton @JvmOverloads constructor(
         }
     }
 
-    private fun animateInfinitely() {
+    fun animateInfinitely() {
         val config = AnimationConfig(200, 1200, INFINITE, AccelerateInterpolator())
 
         animateIntValue(config) { _, fraction ->
@@ -95,6 +96,31 @@ class PlaybackButton @JvmOverloads constructor(
             }
             postInvalidate()
         }
+    }
+
+    private fun createProgressBox(width: Int, height: Int): RectF {
+        val halfStroke = stroke / 2
+
+        val left = halfStroke + paddingLeft
+        val right = (width - halfStroke) - paddingRight
+        val bottom = (height - halfStroke) - paddingBottom
+        val top = halfStroke + paddingTop
+        return RectF(left, top, right, bottom)
+    }
+
+    private fun createPlaybackBox(progressBox: RectF): RectF {
+        val playbackPadding = dpToPixel(6f)
+        val halfStroke = stroke / 2
+        val centerX = progressBox.centerX()
+        val centerY = progressBox.centerY()
+        val x = (progressBox.right - centerX) / sqrt(2.0).toFloat()
+        val y = (progressBox.bottom - centerY) / sqrt(2.0).toFloat()
+
+        val left = centerX - x + halfStroke + playbackPadding
+        val right = centerX + x - halfStroke - playbackPadding
+        val top = centerY - y + halfStroke + playbackPadding
+        val bottom = centerY + y - halfStroke - playbackPadding
+        return RectF(left, top, right, bottom)
     }
 }
 
