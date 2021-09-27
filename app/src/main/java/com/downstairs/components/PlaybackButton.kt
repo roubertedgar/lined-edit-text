@@ -1,16 +1,16 @@
 package com.downstairs.components
 
-import android.animation.ValueAnimator
 import android.animation.ValueAnimator.INFINITE
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
 import android.view.animation.AccelerateInterpolator
-import android.view.animation.Interpolator
-import android.view.animation.LinearInterpolator
+import com.downstairs.AnimationConfig
+import com.downstairs.animateIntValue
 import com.downstairs.dpToPixel
 import com.downstairs.measureDimension
 import kotlin.math.sqrt
@@ -25,12 +25,11 @@ class PlaybackButton @JvmOverloads constructor(
 
     private var progressBox = RectF(0f, 0f, 0f, 0f)
     private var playbackBox = RectF(0f, 0f, 0f, 0f)
+    private var playbackPath = Path()
     private var startAngle = 0.0f
     private var sweepAngle = 0.0f
     private var centerX = 0.0f
     private var centerY = 0.0f
-
-    private var progress = 0
 
     private var progressPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -41,11 +40,13 @@ class PlaybackButton @JvmOverloads constructor(
 
     private var playbackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL_AND_STROKE
+        strokeWidth = stroke
         color = resources.getColor(R.color.colorAccent)
     }
 
     init {
         if (isInEditMode) sweepAngle = 270f
+
         isClickable = true
         isFocusable = true
     }
@@ -62,8 +63,9 @@ class PlaybackButton @JvmOverloads constructor(
     override fun onSizeChanged(width: Int, height: Int, oldWidth: Int, oldHeight: Int) {
         centerX = (width / 2f)
         centerY = height / 2f
-        progressBox = createProgressBox(width, height)
-        playbackBox = createPlaybackBox(progressBox)
+        updateProgressBox(width, height)
+        updatePlaybackBox(progressBox)
+        toPlayState()
     }
 
     override fun draw(canvas: Canvas) {
@@ -72,6 +74,8 @@ class PlaybackButton @JvmOverloads constructor(
         canvas.rotate(-90f, centerX, centerY)
         canvas.drawArc(progressBox, startAngle, sweepAngle, false, progressPaint)
         canvas.restore()
+
+        canvas.drawPath(playbackPath, playbackPaint)
     }
 
     fun setProgress(progress: Int, duration: Long = 100) {
@@ -84,7 +88,7 @@ class PlaybackButton @JvmOverloads constructor(
         }
     }
 
-    fun animateInfinitely() {
+    private fun animateInfinitely() {
         val config = AnimationConfig(200, 1200, INFINITE, AccelerateInterpolator())
 
         animateIntValue(config) { _, fraction ->
@@ -98,17 +102,17 @@ class PlaybackButton @JvmOverloads constructor(
         }
     }
 
-    private fun createProgressBox(width: Int, height: Int): RectF {
+    private fun updateProgressBox(width: Int, height: Int) {
         val halfStroke = stroke / 2
 
         val left = halfStroke + paddingLeft
         val right = (width - halfStroke) - paddingRight
         val bottom = (height - halfStroke) - paddingBottom
         val top = halfStroke + paddingTop
-        return RectF(left, top, right, bottom)
+        progressBox = RectF(left, top, right, bottom)
     }
 
-    private fun createPlaybackBox(progressBox: RectF): RectF {
+    private fun updatePlaybackBox(progressBox: RectF) {
         val playbackPadding = dpToPixel(6f)
         val halfStroke = stroke / 2
         val centerX = progressBox.centerX()
@@ -116,34 +120,18 @@ class PlaybackButton @JvmOverloads constructor(
         val x = (progressBox.right - centerX) / sqrt(2.0).toFloat()
         val y = (progressBox.bottom - centerY) / sqrt(2.0).toFloat()
 
-        val left = centerX - x + halfStroke + playbackPadding
+        val left = centerX - x + (halfStroke + playbackPadding * 2)
         val right = centerX + x - halfStroke - playbackPadding
         val top = centerY - y + halfStroke + playbackPadding
         val bottom = centerY + y - halfStroke - playbackPadding
-        return RectF(left, top, right, bottom)
+        playbackBox = RectF(left, top, right, bottom)
+    }
+
+    private fun toPlayState() {
+        playbackPath.moveTo(playbackBox.left, playbackBox.top)
+        playbackPath.lineTo(playbackBox.left, playbackBox.bottom)
+        playbackPath.lineTo(playbackBox.right, playbackBox.centerY())
+        playbackPath.lineTo(playbackBox.left, playbackBox.top)
+        playbackPath.close()
     }
 }
-
-fun animateIntValue(
-    config: AnimationConfig,
-    onUpdate: (value: Int, fraction: Float) -> Unit
-) {
-    ValueAnimator.ofInt(0, config.value).apply {
-        duration = config.duration
-        repeatCount = config.repeat
-        interpolator = config.interpolator
-        addUpdateListener { valueAnimator ->
-            onUpdate(
-                valueAnimator.animatedValue as Int,
-                valueAnimator.animatedFraction
-            )
-        }
-    }.start()
-}
-
-data class AnimationConfig(
-    val value: Int = 100,
-    val duration: Long = 600,
-    val repeat: Int = 0,
-    val interpolator: Interpolator = LinearInterpolator()
-)

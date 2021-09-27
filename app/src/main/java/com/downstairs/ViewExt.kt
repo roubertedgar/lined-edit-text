@@ -1,6 +1,9 @@
 package com.downstairs
 
+import android.animation.ValueAnimator
 import android.view.View
+import android.view.animation.Interpolator
+import android.view.animation.LinearInterpolator
 
 fun measureDimension(desiredSize: Int, measureSpec: Int): Int {
 
@@ -29,3 +32,27 @@ fun View.dpToPixel(dp: Float): Float {
     val scale = this.resources.displayMetrics.density
     return dp * scale + 0.5f
 }
+
+fun animateIntValue(
+    config: AnimationConfig,
+    onUpdate: (value: Int, fraction: Float) -> Unit
+) {
+    ValueAnimator.ofInt(0, config.value).apply {
+        duration = config.duration
+        repeatCount = config.repeat
+        interpolator = config.interpolator
+        addUpdateListener { valueAnimator ->
+            onUpdate(
+                valueAnimator.animatedValue as Int,
+                valueAnimator.animatedFraction
+            )
+        }
+    }.start()
+}
+
+data class AnimationConfig(
+    val value: Int = 100,
+    val duration: Long = 600,
+    val repeat: Int = 0,
+    val interpolator: Interpolator = LinearInterpolator()
+)
