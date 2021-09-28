@@ -9,6 +9,7 @@ import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
 import android.view.animation.AccelerateInterpolator
+import androidx.core.content.ContextCompat
 import com.downstairs.AnimationConfig
 import com.downstairs.animateIntValue
 import com.downstairs.dpToPixel
@@ -20,29 +21,23 @@ class PlaybackButton @JvmOverloads constructor(
     attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
+
     private val size = context.resources.getDimension(R.dimen.default_progress_size)
     private val stroke = context.resources.getDimension(R.dimen.default_progress_stroke)
+    private val colorAccent = ContextCompat.getColor(context, R.color.colorAccent)
 
     private var progressBox = RectF(0f, 0f, 0f, 0f)
+    private var progressPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colorAccent }
+
     private var playbackBox = RectF(0f, 0f, 0f, 0f)
     private var playbackPath = Path()
+    private var playbackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colorAccent }
+    private val playbackPadding = dpToPixel(6f)
+
     private var startAngle = 0.0f
     private var sweepAngle = 0.0f
     private var centerX = 0.0f
     private var centerY = 0.0f
-
-    private var progressPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeWidth = stroke
-        strokeCap = Paint.Cap.ROUND
-        color = resources.getColor(R.color.colorAccent)
-    }
-
-    private var playbackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL_AND_STROKE
-        strokeWidth = stroke
-        color = resources.getColor(R.color.colorAccent)
-    }
 
     init {
         if (isInEditMode) sweepAngle = 270f
@@ -65,7 +60,7 @@ class PlaybackButton @JvmOverloads constructor(
         centerY = height / 2f
         updateProgressBox(width, height)
         updatePlaybackBox(progressBox)
-        toPlayState()
+        toPauseState()
     }
 
     override fun draw(canvas: Canvas) {
@@ -109,29 +104,54 @@ class PlaybackButton @JvmOverloads constructor(
         val right = (width - halfStroke) - paddingRight
         val bottom = (height - halfStroke) - paddingBottom
         val top = halfStroke + paddingTop
+
         progressBox = RectF(left, top, right, bottom)
+        progressPaint.style = Paint.Style.STROKE
+        progressPaint.strokeWidth = stroke
     }
 
     private fun updatePlaybackBox(progressBox: RectF) {
-        val playbackPadding = dpToPixel(6f)
         val halfStroke = stroke / 2
         val centerX = progressBox.centerX()
         val centerY = progressBox.centerY()
         val x = (progressBox.right - centerX) / sqrt(2.0).toFloat()
         val y = (progressBox.bottom - centerY) / sqrt(2.0).toFloat()
 
-        val left = centerX - x + (halfStroke + playbackPadding * 2)
-        val right = centerX + x - halfStroke - playbackPadding
-        val top = centerY - y + halfStroke + playbackPadding
-        val bottom = centerY + y - halfStroke - playbackPadding
+        val left = centerX - x + halfStroke
+        val right = centerX + x - halfStroke
+        val top = centerY - y + halfStroke
+        val bottom = centerY + y - halfStroke
         playbackBox = RectF(left, top, right, bottom)
     }
 
     private fun toPlayState() {
-        playbackPath.moveTo(playbackBox.left, playbackBox.top)
-        playbackPath.lineTo(playbackBox.left, playbackBox.bottom)
-        playbackPath.lineTo(playbackBox.right, playbackBox.centerY())
-        playbackPath.lineTo(playbackBox.left, playbackBox.top)
+        val left = playbackBox.left + playbackPadding * 2
+        val right = playbackBox.right - playbackPadding
+        val top = playbackBox.top + playbackPadding
+        val bottom = playbackBox.bottom - playbackPadding
+        val centerY = playbackBox.centerY()
+
+        playbackPath.moveTo(left, top)
+        playbackPath.lineTo(left, bottom)
+        playbackPath.lineTo(right, centerY)
+        playbackPath.lineTo(left, top)
         playbackPath.close()
+
+        playbackPaint.style = Paint.Style.FILL
+    }
+
+    private fun toPauseState() {
+        val left = playbackBox.left + playbackPadding * 2
+        val right = playbackBox.right - playbackPadding * 2
+        val top = playbackBox.top + playbackPadding
+        val bottom = playbackBox.bottom - playbackPadding
+
+        playbackPath.moveTo(left, top)
+        playbackPath.lineTo(left, bottom)
+        playbackPath.moveTo(right, top)
+        playbackPath.lineTo(right, bottom)
+
+        playbackPaint.style = Paint.Style.STROKE
+        playbackPaint.strokeWidth = dpToPixel(6f)
     }
 }
