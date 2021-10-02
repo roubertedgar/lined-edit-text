@@ -1,6 +1,7 @@
 package com.downstairs
 
 import android.animation.ValueAnimator
+import android.content.Context
 import android.view.View
 import android.view.animation.Interpolator
 import android.view.animation.LinearInterpolator
@@ -22,6 +23,16 @@ fun measureDimension(desiredSize: Int, measureSpec: Int): Int {
     }
 }
 
+
+fun Context.pixelToDp(pixel: Float): Float {
+    val scale = this.resources.displayMetrics.density
+    return pixel / scale - 0.5f
+}
+
+fun Context.dpToPixel(dp: Float): Float {
+    val scale = this.resources.displayMetrics.density
+    return dp * scale + 0.5f
+}
 
 fun View.pixelToDp(pixel: Float): Float {
     val scale = this.resources.displayMetrics.density
